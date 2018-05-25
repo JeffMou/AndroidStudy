@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Answer</string>
+    <string name="title_activity_answer_call">AnswerCall</string>
+</resources>
