@@ -2,6 +2,8 @@ package com.jeff.sendmss;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -16,7 +18,10 @@ import com.google.android.mms.pdu.PduComposer;
 import com.google.android.mms.pdu.PduPart;
 import com.google.android.mms.pdu.SendReq;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -27,22 +32,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         try {
-            String mobile="15928594069";
-            String content="Jefftest";
-            //发送彩信
-            Log.i(TAG, Environment.getExternalStorageDirectory().toString());
-            File file = new File(Environment.getExternalStorageDirectory() + "/images", "test.jpg");
-            Uri uri=FileProvider.getUriForFile(this, "com.jeff.sendmss.fileProvider", file);   //图片路径
-            Intent intent=new Intent();
-            intent.setAction(Intent.ACTION_SEND);
-            intent.putExtra("address",mobile);              //邮件地址
-            intent.putExtra("sms_body",content);            //邮件内容
-            intent.putExtra(Intent.EXTRA_STREAM,uri);
-            intent.setType("image/png");                    //设置类型
-            MainActivity.this.startActivity(intent);
+            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo info = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+            String currentAPN = info.getExtraInfo();
+            Log.i("MMSSender", "========" + currentAPN );
 
-
-            //sendMMS(this);
+            sendMMS(this);
         } catch (Exception e) {
             Log.i("MMSSender", "Error", e);
         }
@@ -63,15 +58,14 @@ public class MainActivity extends AppCompatActivity {
             sendRequest.addTo(phoneNumbers[0]);
         }
         final PduBody pduBody = new PduBody();
-        String furl= Environment.getExternalStorageDirectory().getAbsolutePath()+"/test.jpg";
-        Log.i(TAG, "path======" + furl);;
-        File file=new File(furl);
-
         final PduPart partPdu = new PduPart();
         partPdu.setCharset(CharacterSets.UTF_8);//UTF_16
         partPdu.setName("jefftest".getBytes());
         partPdu.setContentType("image/png".getBytes());
-        partPdu.setDataUri(FileProvider.getUriForFile(context, "com.jeff.sendmss.fileProvider", new File(furl)));
+        File file = new File(Environment.getExternalStorageDirectory() + "/images", "test.jpg");
+        partPdu.setDataUri(FileProvider.getUriForFile(context, "com.jeff.sendmss.fileProvider", file));
+/*        String furl = "file://mnt/sdcard//test.jpg";
+        partPdu.setDataUri(Uri.parse(furl));*/
         pduBody.addPart(partPdu);
         sendRequest.setDate(System.currentTimeMillis() / 1000);
         sendRequest.setBody(pduBody);
@@ -87,8 +81,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    byte[] res = MMSSender.sendMMS(context, list,
-                            bytesToSend);
+                        MMSSender.sendMMS(context,list, bytesToSend);
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     Log.i("MMSSender", "Error", e);
@@ -98,5 +91,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public void sendMMSByIntent() {
+        try {
+            String mobile="15928594069";
+            String content="Jefftest";
+            //发送彩信
+            Log.i(TAG, Environment.getExternalStorageDirectory().toString());
+            File file = new File(Environment.getExternalStorageDirectory() + "/images", "test.jpg");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            String line="";
+            line = bufferedReader.readLine();
+            while (line!= null) {
+                Log.i(TAG,line);
+                line=bufferedReader.readLine();
+            }
 
+            Uri uri=FileProvider.getUriForFile(this, "com.jeff.sendmss.fileProvider", file);   //图片路径
+            Intent intent=new Intent();
+            intent.setAction(Intent.ACTION_SEND);
+            intent.putExtra("address",mobile);              //邮件地址
+            intent.putExtra("sms_body",content);            //邮件内容
+            intent.putExtra(Intent.EXTRA_STREAM,uri);
+            intent.setType("image/png");                    //设置类型
+            MainActivity.this.startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

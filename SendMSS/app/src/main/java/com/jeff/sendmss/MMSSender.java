@@ -2,6 +2,7 @@ package com.jeff.sendmss;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.SocketException;
+import java.net.URI;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
@@ -11,6 +12,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.conn.params.ConnRouteParams;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
@@ -20,6 +22,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 
 import android.content.Context;
+import android.net.http.AndroidHttpClient;
 import android.util.Log;
 
 /**
@@ -32,7 +35,7 @@ public class MMSSender {
     // public static String mmscProxy = "10.0.0.172";
     public static int mmsProt = 80;
 
-    private static String HDR_VALUE_ACCEPT_LANGUAGE = "";
+    private static String HDR_VALUE_ACCEPT_LANGUAGE = HTTP.UTF_8;;
     private static final String HDR_KEY_ACCEPT = "Accept";
     private static final String HDR_KEY_ACCEPT_LANGUAGE = "Accept-Language";
     private static final String HDR_VALUE_ACCEPT = "*/*, application/vnd.wap.mms-message, application/vnd.wap.sic";
@@ -45,6 +48,8 @@ public class MMSSender {
 
         String mmsUrl = (String) list.get(0);
         String mmsProxy = (String) list.get(1);
+        Log.i(TAG, mmsUrl);
+        Log.i(TAG, mmsProxy);
         if (mmsUrl == null) {
             throw new IllegalArgumentException("URL must not be null.");
         }
@@ -141,5 +146,102 @@ public class MMSSender {
         }
         return new byte[0];
     }
+
+    //public static String mmscUrl = "http://mmsc.monternet.com";
+    //public static String mmscUrl = "http://mmsc.myuni.com.cn";
+    public static String mmscUrl = "http://mmsc.vnet.mobi";
+    //public static String mmscUrl = "http://www.baidu.com";
+    public static String mmsProxy = "10.0.0.172";
+    public static String mmsPort = "80";
+
+    //private static String HDR_VALUE_ACCEPT_LANGUAGE = "";
+
+    private static final String HDR__KEY_ACCEPT = "Accept";
+    //private static final String HDR_KEY_ACCEPT_LANGUAGE = "Accept-Language";
+
+    //private static final String HDR_VALUE_ACCEPT ="*/*, application/vnd.wap.mms-message, application/vnd.wap.sic";
+    public static byte[] sendMMMS(Context context, byte[] pdu) throws Exception
+    {
+        //HDR_AVLUE_ACCEPT_LANGUAGE = getHttpAcceptLanguage();
+
+        if (mmscUrl == null)
+        {
+            throw new IllegalAccessException("URL must not be null");
+        }
+
+        HttpClient client = null;
+        try{
+            //client = AndroidHttpClient.newInstance("Android-Mms/2.0");
+            //client = HttpConnector.buileClient(context);
+            URI hostUrl = new URI(mmscUrl);
+            HttpHost target = new HttpHost(
+                    hostUrl.getHost(), hostUrl.getPort(),
+                    HttpHost.DEFAULT_SCHEME_NAME);
+
+            client = AndroidHttpClient.newInstance("Android-Mms/2.0");
+
+            HttpPost post = new HttpPost(mmscUrl);
+            ByteArrayEntity entity = new ByteArrayEntity(pdu);
+            entity.setContentType("application/vnd.wap.mms-message");
+            post.setEntity(entity);
+            post.addHeader(HDR__KEY_ACCEPT,HDR_VALUE_ACCEPT);
+            post.addHeader(HDR_KEY_ACCEPT_LANGUAGE, HDR_VALUE_ACCEPT_LANGUAGE);
+
+            HttpParams params = client.getParams();
+            HttpProtocolParams.setContentCharset(params, "UTF-8");
+
+            ConnRouteParams.setDefaultProxy(
+                    params, new HttpHost(mmsProxy, 80));
+            //req.setParams(params);
+            HttpResponse response = client.execute(target,post);
+
+            StatusLine status = response.getStatusLine();
+            System.out.println("status : " + status.getStatusCode());
+            if (status.getStatusCode() != 200)
+            {
+                Log.i(TAG, "!200");
+                throw new IOException("HTTP error: " + status.getReasonPhrase());
+            }
+
+            HttpEntity resentity = response.getEntity();
+            byte[] body = null;
+
+            if (resentity != null)
+            {
+                try{
+                    if (resentity.getContentLength() <= 0)
+                    {
+                        body  =  new byte[(int)resentity.getContentLength()];
+                        DataInputStream dis = new DataInputStream(resentity.getContent());
+
+                        try{
+                            dis.readFully(body);
+                        }finally{
+                            try{
+                                dis.close();
+                            }catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+                }finally
+                {
+                    if (entity != null)
+                        entity.consumeContent();
+                }
+            }
+            System.out.println("result : "+ new String(body));
+            return body;
+
+        }catch (Exception e)
+        {
+            Log.e(TAG, "", e);
+            e.printStackTrace();
+        }
+        return new byte[0];
+    }
+
 
 }

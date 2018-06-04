@@ -21,7 +21,9 @@ public class APNManager {
     public static String mmscUrl_cm = "http://mmsc.monternet.com";
     public static String mmsProxy_cm = "10.0.0.172";
     // 联通彩信中心url，代理，端口
-    public static String mmscUrl_uni = "http://mmsc.vnet.mobi";
+    //public static String mmscUrl_uni = "http://mmsc.vnet.mobi";
+    public static String mmscUrl_uni = "http://mmsc.myuni.com.cn";
+    //public static String mmscUrl_uni = "http://mmsc.monternet.com";
     public static String mmsProxy_uni = "10.0.0.172";
 
     private static String TAG = "APNManager";
