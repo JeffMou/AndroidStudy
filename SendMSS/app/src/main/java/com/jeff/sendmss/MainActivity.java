@@ -22,6 +22,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -81,7 +83,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                        MMSSender.sendMMS(context,list, bytesToSend);
+                        //MMSSender.sendPost(context, list, bytesToSend);
+                    MmsHttpClient.execute("http://mmsc.myuni.com.cn", bytesToSend, "POST", "10.0.0.172", 80, null ,null);
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     Log.i("MMSSender", "Error", e);

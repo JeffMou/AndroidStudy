@@ -1,9 +1,15 @@
 package com.jeff.sendmss;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.URI;
+import java.net.URL;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -22,8 +28,11 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 
 import android.content.Context;
+import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.util.Log;
+
+import static android.R.attr.host;
 
 /**
  * @author
@@ -64,7 +73,7 @@ public class MMSSender {
             httpParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, httpHost);
             HttpConnectionParams.setConnectionTimeout(httpParams, 10000);
 
-            client = new DefaultHttpClient(httpParams);
+
 
             HttpPost post = new HttpPost(mmsUrl);
             // mms PUD START
@@ -84,7 +93,7 @@ public class MMSSender {
 
             // PlainSocketFactory localPlainSocketFactory =
             // PlainSocketFactory.getSocketFactory();
-
+            client = new DefaultHttpClient(httpParams);
             HttpResponse response = client.execute(post);
 
             Log.i(TAG, "执行发送结束， 等回执。。");
@@ -142,10 +151,56 @@ public class MMSSender {
             if (client != null) {
                 // client.;
             }
-            APNManager.shouldChangeApnBack(context);
         }
         return new byte[0];
     }
+
+    public static byte[] sendMMSNew(Context context, List<String> list, byte[] pdu)
+            throws IOException {
+        Log.i(TAG, "进入sendMMS方法");
+        // HDR_VALUE_ACCEPT_LANGUAGE = getHttpAcceptLanguage();
+        HDR_VALUE_ACCEPT_LANGUAGE = HTTP.UTF_8;
+
+        String mmsUrl = (String) list.get(0);
+        String mmsProxy = (String) list.get(1);
+        Log.i(TAG, mmsUrl);
+        Log.i(TAG, mmsProxy);
+        if (mmsUrl == null) {
+            throw new IllegalArgumentException("URL must not be null.");
+        }
+
+
+
+
+        try {
+            Properties systemProperties = System.getProperties();
+            systemProperties.setProperty("http.proxyHost", mmsProxy);
+            systemProperties.setProperty("http.proxyPort", mmsPort);
+            systemProperties.setProperty("http.keepAlive", "false");
+
+
+            URL url = new URL(mmsUrl);
+            HttpURLConnection postConnection = (HttpURLConnection) url.openConnection();
+            postConnection.setConnectTimeout(10000);
+            postConnection.setRequestMethod("POST"); // 以post请求方式提交
+            postConnection.setRequestProperty("Content-Type", "application/vnd.wap.mms-message");
+            postConnection.setRequestProperty("Content-Length", Integer.toString(3000));
+            postConnection.setDoInput(true); // 读取数据
+            postConnection.setDoOutput(true); // 向服务器写数据
+            postConnection.connect();
+
+            if (postConnection.getContentLength() >= 0) {
+
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "", e);
+        }
+
+        return new byte[0];
+    }
+
+
+
 
     //public static String mmscUrl = "http://mmsc.monternet.com";
     //public static String mmscUrl = "http://mmsc.myuni.com.cn";
@@ -243,5 +298,65 @@ public class MMSSender {
         return new byte[0];
     }
 
+
+
+    public static String sendPost(Context context, List<String> list, byte[] pdu){
+
+        try {
+            //建立连接
+            String mmsUrl = (String) list.get(0);
+            String mmsProxy = (String) list.get(1);
+
+            URL url = new URL(mmsUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            //设置连接属性
+            connection.setDoOutput(true); //使用URL连接进行输出
+            connection.setDoInput(true); //使用URL连接进行输入
+            connection.setUseCaches(false); //忽略缓存
+            connection.setRequestMethod("POST"); //设置URL请求方法
+
+            Properties systemProperties = System.getProperties();
+            systemProperties.setProperty("http.proxyHost", mmsProxy);
+            systemProperties.setProperty("http.proxyPort", mmsPort);
+            systemProperties.setProperty("http.keepAlive", "false");
+
+            connection.setRequestProperty("Content-length", "" + pdu.length);
+            connection.setRequestProperty("Content-Type", "application/vnd.wap.mms-message");
+            connection.setRequestProperty("Connection", "Keep-Alive");// 维持长连接
+            connection.setRequestProperty("Charset", "UTF-8");
+
+            connection.setConnectTimeout(10000);
+            //connection.setReadTimeout(10000);
+
+            //建立输出流,并写入数据
+            OutputStream outputStream = connection.getOutputStream();
+            outputStream.write(pdu);
+            outputStream.close();
+
+            //获取响应状态
+            int responseCode = connection.getResponseCode();
+
+            if (HttpURLConnection.HTTP_OK == responseCode) { //连接成功
+                //当正确响应时处理数据
+                StringBuffer buffer = new StringBuffer();
+                String readLine;
+                BufferedReader responseReader;
+                //处理响应流
+                responseReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                while ((readLine = responseReader.readLine()) != null) {
+                    buffer.append(readLine).append("\n");
+                }
+                responseReader.close();
+                Log.d(TAG, buffer.toString());
+                return buffer.toString();//成功
+            }
+        }catch (Exception e){
+            Log.e(TAG, "", e);
+            e.printStackTrace();
+        }
+        return "Fail";//失败
+
+    }
 
 }

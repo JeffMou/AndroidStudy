@@ -23,10 +23,11 @@ public class APNManager {
     // 联通彩信中心url，代理，端口
     //public static String mmscUrl_uni = "http://mmsc.vnet.mobi";
     public static String mmscUrl_uni = "http://mmsc.myuni.com.cn";
+
     //public static String mmscUrl_uni = "http://mmsc.monternet.com";
     public static String mmsProxy_uni = "10.0.0.172";
 
-    private static String TAG = "APNManager";
+    private static String TAG = "MMSSender";
     private static final Uri APN_TABLE_URI = Uri
             .parse("content://telephony/carriers");// 所有的APN配配置信息位置
     private static final Uri PREFERRED_APN_URI = Uri
@@ -40,7 +41,7 @@ public class APNManager {
         TelephonyManager telManager = (TelephonyManager) context
                 .getSystemService(Context.TELEPHONY_SERVICE);
         String imsi = telManager.getSubscriberId();
-        Log.i("jefftest", imsi);
+        Log.i(TAG, imsi);
         if (imsi != null) {
             ArrayList<String> list = new ArrayList<String>();
             if (imsi.startsWith("46000") || imsi.startsWith("46002")) {
