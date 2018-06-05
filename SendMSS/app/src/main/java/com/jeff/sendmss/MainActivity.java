@@ -66,9 +66,16 @@ public class MainActivity extends AppCompatActivity {
         partPdu.setContentType("image/png".getBytes());
         File file = new File(Environment.getExternalStorageDirectory() + "/images", "test.jpg");
         partPdu.setDataUri(FileProvider.getUriForFile(context, "com.jeff.sendmss.fileProvider", file));
-/*        String furl = "file://mnt/sdcard//test.jpg";
-        partPdu.setDataUri(Uri.parse(furl));*/
         pduBody.addPart(partPdu);
+
+        final PduPart textPdu = new PduPart();
+        textPdu.setCharset(CharacterSets.UTF_8);//UTF_16
+        textPdu.setName("mms_text.txt".getBytes());
+        textPdu.setContentType("text/plain".getBytes());
+        String data = "1324435ipo43u5o2i354uo34i5uodfjglkgdj????";
+        textPdu.setData(data.getBytes());
+        pduBody.addPart(textPdu);
+
         sendRequest.setDate(System.currentTimeMillis() / 1000);
         sendRequest.setBody(pduBody);
         final PduComposer composer = new PduComposer(context, sendRequest);
